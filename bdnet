@@ -1,0 +1,80 @@
+cat > bin/bdnet << 'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+
+# BD Network Diagnostics Pro
+# Professional Network Analysis Tool
+
+echo ""
+echo "🌐 BD Network Diagnostics Pro"
+echo "============================="
+
+# Internet Connectivity
+echo "📡 INTERNET CONNECTIVITY"
+echo "========================"
+if ping -c 2 -W 1 8.8.8.8 >/dev/null 2>&1; then
+    echo "Status:   ✅ Connected"
+    
+    # Get public IP
+    public_ip=$(curl -s --connect-timeout 5 https://api.ipify.org)
+    if [ -n "$public_ip" ]; then
+        echo "Public IP: $public_ip"
+    fi
+else
+    echo "Status:   ❌ Disconnected"
+fi
+
+# DNS Resolution
+echo ""
+echo "🔍 DNS RESOLUTION"
+echo "================="
+if nslookup google.com >/dev/null 2>&1; then
+    echo "DNS:      ✅ Working"
+else
+    echo "DNS:      ❌ Failed"
+fi
+
+# Local Network
+echo ""
+echo "🏠 LOCAL NETWORK"
+echo "================"
+local_ip=$(ip route get 1 2>/dev/null | awk '{print $7}' | head -1)
+if [ -n "$local_ip" ] && [ "$local_ip" != "dev" ]; then
+    echo "Local IP: $local_ip"
+else
+    echo "Local IP: Not available"
+fi
+
+# Network Interfaces
+echo ""
+echo "🔌 NETWORK INTERFACES"
+echo "====================="
+if command -v ifconfig >/dev/null 2>&1; then
+    ifconfig | grep -E "^[a-z]" | cut -d: -f1 | while read -r interface; do
+        echo "Interface: $interface"
+    done
+else
+    echo "Network interfaces: ifconfig not available"
+fi
+
+# Port Checking
+echo ""
+echo "🔒 COMMON PORTS"
+echo "==============="
+ports=("80:HTTP" "443:HTTPS" "22:SSH" "53:DNS")
+for port_info in "${ports[@]}"; do
+    port="${port_info%:*}"
+    service="${port_info#*:}"
+    
+    if nc -z 127.0.0.1 "$port" 2>/dev/null; then
+        echo "Port $port ($service): ✅ Open"
+    else
+        echo "Port $port ($service): ❌ Closed"
+    fi
+done
+
+echo ""
+echo "✅ Network diagnostics completed"
+echo "💡 BD Termux Tools Pro - By Masum Vai"
+EOF
+
+chmod +x bin/bdnet

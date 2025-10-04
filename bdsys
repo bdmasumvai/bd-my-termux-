@@ -1,0 +1,85 @@
+cat > bin/bdsys << 'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+
+# BD System Analyzer Pro
+# Professional System Information Tool
+
+echo ""
+echo "🖥️  BD System Analyzer Pro"
+echo "=========================="
+
+# System Information
+echo "📱 DEVICE INFORMATION"
+echo "===================="
+model=$(getprop ro.product.model 2>/dev/null || echo "Unknown")
+brand=$(getprop ro.product.brand 2>/dev/null || echo "Unknown")
+android=$(getprop ro.build.version.release 2>/dev/null || echo "Unknown")
+echo "Model:    $model"
+echo "Brand:    $brand"
+echo "Android:  $android"
+echo "Arch:     $(uname -m)"
+echo "Kernel:   $(uname -r)"
+
+# Memory Information
+echo ""
+echo "🧠 MEMORY USAGE"
+echo "==============="
+if [ -f /proc/meminfo ]; then
+    total_mem=$(grep MemTotal /proc/meminfo | awk '{printf "%.1f", $2/1024/1024}')
+    available_mem=$(grep MemAvailable /proc/meminfo | awk '{printf "%.1f", $2/1024/1024}')
+    echo "Total:    ${total_mem}GB"
+    echo "Available: ${available_mem}GB"
+else
+    echo "Memory info: Not available"
+fi
+
+# Storage Information
+echo ""
+echo "💾 STORAGE STATUS"
+echo "================="
+storage_info=$(df -h "$HOME" 2>/dev/null | tail -1)
+if [ -n "$storage_info" ]; then
+    used=$(echo "$storage_info" | awk '{print $3}')
+    total=$(echo "$storage_info" | awk '{print $2}')
+    percent=$(echo "$storage_info" | awk '{print $5}')
+    echo "Used:     $used / $total ($percent)"
+else
+    echo "Storage info: Not available"
+fi
+
+# Package Information
+echo ""
+echo "📦 PACKAGE STATUS"
+echo "================="
+if command -v pkg >/dev/null 2>&1; then
+    pkg_count=$(pkg list-installed 2>/dev/null | wc -l)
+    echo "Packages:  $pkg_count installed"
+else
+    echo "Packages:  pkg command not available"
+fi
+
+# Network Status
+echo ""
+echo "🌐 NETWORK STATUS"
+echo "================="
+if ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
+    echo "Internet:  ✅ Connected"
+else
+    echo "Internet:  ❌ Disconnected"
+fi
+
+# System Health
+echo ""
+echo "⚡ SYSTEM HEALTH"
+echo "================"
+echo "Uptime:    $(uptime -p 2>/dev/null | sed 's/up //' || echo 'Unknown')"
+echo "Processes: $(ps -A 2>/dev/null | wc -l)"
+echo "User:      $(whoami)"
+echo "Shell:     $SHELL"
+
+echo ""
+echo "✅ System analysis completed"
+echo "💡 BD Termux Tools Pro - By Masum Vai"
+EOF
+
+chmod +x bin/bdsys

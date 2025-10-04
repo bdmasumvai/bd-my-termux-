@@ -1,0 +1,114 @@
+cat > bin/bdpkg << 'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+
+# BD Package Manager Pro
+# Smart Package Management System
+
+show_help() {
+    echo "BD Package Manager Pro"
+    echo "======================"
+    echo "Usage: bdpkg [command] [options]"
+    echo ""
+    echo "Commands:"
+    echo "  install <pkg>    Install package"
+    echo "  remove <pkg>     Remove package"
+    echo "  update           Update system"
+    echo "  list             List installed packages"
+    echo "  search <query>   Search packages"
+    echo "  clean            Clean cache"
+}
+
+install_package() {
+    if [ -z "$1" ]; then
+        echo "❌ Package name required"
+        return 1
+    fi
+    
+    echo "📦 Installing: $1"
+    pkg install -y "$1"
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Successfully installed: $1"
+    else
+        echo "❌ Failed to install: $1"
+    fi
+}
+
+remove_package() {
+    if [ -z "$1" ]; then
+        echo "❌ Package name required"
+        return 1
+    fi
+    
+    echo "🗑️  Removing: $1"
+    pkg uninstall -y "$1"
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Successfully removed: $1"
+    else
+        echo "❌ Failed to remove: $1"
+    fi
+}
+
+update_system() {
+    echo "🔄 Updating package lists..."
+    pkg update
+    
+    echo "📥 Upgrading packages..."
+    pkg upgrade -y
+    
+    echo "🧹 Cleaning up..."
+    pkg autoclean
+    
+    echo "✅ System update completed"
+}
+
+list_packages() {
+    echo "📋 Installed Packages:"
+    pkg list-installed | head -20
+}
+
+search_packages() {
+    if [ -z "$1" ]; then
+        echo "❌ Search query required"
+        return 1
+    fi
+    
+    echo "🔍 Searching for: $1"
+    pkg search "$1" | head -10
+}
+
+clean_cache() {
+    echo "🧹 Cleaning package cache..."
+    pkg clean
+    pkg autoclean
+    echo "✅ Cache cleaned"
+}
+
+# Main command handler
+case "${1}" in
+    install|in)
+        install_package "$2"
+        ;;
+    remove|rm)
+        remove_package "$2"
+        ;;
+    update|upgrade)
+        update_system
+        ;;
+    list|ls)
+        list_packages
+        ;;
+    search)
+        search_packages "$2"
+        ;;
+    clean)
+        clean_cache
+        ;;
+    *)
+        show_help
+        ;;
+esac
+EOF
+
+chmod +x bin/bdpkg
