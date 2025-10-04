@@ -8,22 +8,24 @@ echo ""
 echo "🌐 BD Network Diagnostics Pro"
 echo "============================="
 
-# Internet Connectivity
+# Internet Connectivity (No error if fails)
 echo "📡 INTERNET CONNECTIVITY"
 echo "========================"
 if ping -c 2 -W 1 8.8.8.8 >/dev/null 2>&1; then
     echo "Status:   ✅ Connected"
     
-    # Get public IP
-    public_ip=$(curl -s --connect-timeout 5 https://api.ipify.org)
+    # Get public IP (silent if fails)
+    public_ip=$(curl -s --connect-timeout 3 https://api.ipify.org 2>/dev/null)
     if [ -n "$public_ip" ]; then
         echo "Public IP: $public_ip"
+    else
+        echo "Public IP: Not available"
     fi
 else
     echo "Status:   ❌ Disconnected"
 fi
 
-# DNS Resolution
+# DNS Resolution (No error if fails)
 echo ""
 echo "🔍 DNS RESOLUTION"
 echo "================="
@@ -33,7 +35,7 @@ else
     echo "DNS:      ❌ Failed"
 fi
 
-# Local Network
+# Local Network (No error if fails)
 echo ""
 echo "🏠 LOCAL NETWORK"
 echo "================"
@@ -44,33 +46,17 @@ else
     echo "Local IP: Not available"
 fi
 
-# Network Interfaces
+# Network Interfaces (No error if fails)
 echo ""
 echo "🔌 NETWORK INTERFACES"
 echo "====================="
 if command -v ifconfig >/dev/null 2>&1; then
-    ifconfig | grep -E "^[a-z]" | cut -d: -f1 | while read -r interface; do
+    ifconfig | grep -E "^[a-z]" | cut -d: -f1 | head -3 | while read -r interface; do
         echo "Interface: $interface"
     done
 else
-    echo "Network interfaces: ifconfig not available"
+    echo "Network interfaces: Not available"
 fi
-
-# Port Checking
-echo ""
-echo "🔒 COMMON PORTS"
-echo "==============="
-ports=("80:HTTP" "443:HTTPS" "22:SSH" "53:DNS")
-for port_info in "${ports[@]}"; do
-    port="${port_info%:*}"
-    service="${port_info#*:}"
-    
-    if nc -z 127.0.0.1 "$port" 2>/dev/null; then
-        echo "Port $port ($service): ✅ Open"
-    else
-        echo "Port $port ($service): ❌ Closed"
-    fi
-done
 
 echo ""
 echo "✅ Network diagnostics completed"
