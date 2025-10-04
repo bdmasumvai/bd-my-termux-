@@ -14,11 +14,11 @@ CYAN='\033[0;36m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
 
-# Banner
+# Banner - Fixed ASCII art
 echo -e "${CYAN}"
 echo "╔══════════════════════════════════════╗"
 echo "║         BD MY TERMUX TOOLS          ║"
-║        Created by Masum Vai            ║
+echo "║        Created by Masum Vai         ║"
 echo "║          Made in Bangladesh         ║"
 echo "╚══════════════════════════════════════╝"
 echo -e "${NC}"
@@ -29,20 +29,26 @@ if [ ! -d "$PREFIX" ]; then
     exit 1
 fi
 
-# Check internet
+# Check internet (optional - don't exit if no internet)
 echo -e "${YELLOW}📡 Checking internet connection...${NC}"
 if ! ping -c 1 google.com &> /dev/null; then
-    echo -e "${RED}❌ No internet connection${NC}"
-    exit 1
+    echo -e "${YELLOW}⚠️  No internet connection - continuing offline installation${NC}"
+    HAS_INTERNET=false
+else
+    echo -e "${GREEN}✅ Internet connection available${NC}"
+    HAS_INTERNET=true
 fi
 
-# Update packages
-echo -e "${YELLOW}🔄 Updating packages...${NC}"
-pkg update -y && pkg upgrade -y
+# Update packages only if internet available
+if [ "$HAS_INTERNET" = true ]; then
+    echo -e "${YELLOW}🔄 Updating packages...${NC}"
+    pkg update -y && pkg upgrade -y
 
-# Install dependencies
-echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-pkg install -y git curl wget python nodejs vim nano
+    echo -e "${YELLOW}📦 Installing dependencies...${NC}"
+    pkg install -y git curl wget python nodejs vim nano
+else
+    echo -e "${YELLOW}📦 Skipping package updates (no internet)${NC}"
+fi
 
 # Create directories
 echo -e "${YELLOW}📁 Creating directories...${NC}"
@@ -61,14 +67,19 @@ for tool in bin/*; do
     fi
 done
 
-# Copy config
+# Copy config (if config directory exists)
 echo -e "${YELLOW}⚙️  Copying configurations...${NC}"
-cp -r config/* $HOME/.config/bdtermux/ 2>/dev/null || true
+if [ -d "config" ]; then
+    cp -r config/* $HOME/.config/bdtermux/ 2>/dev/null || true
+    echo -e "${GREEN}✅ Configurations copied${NC}"
+else
+    echo -e "${YELLOW}⚠️  No config directory found${NC}"
+fi
 
 # Create backup of original files
 echo -e "${YELLOW}💾 Creating backups...${NC}"
-cp $HOME/.bashrc $HOME/.bdtermux/backups/bashrc.backup 2>/dev/null || true
-cp $HOME/.zshrc $HOME/.bdtermux/backups/zshrc.backup 2>/dev/null || true
+cp $HOME/.bashrc $HOME/.bdtermux/backups/bashrc.backup 2>/dev/null || echo -e "${YELLOW}⚠️  Could not backup .bashrc${NC}"
+cp $HOME/.zshrc $HOME/.bdtermux/backups/zshrc.backup 2>/dev/null || echo -e "${YELLOW}⚠️  Could not backup .zshrc${NC}"
 
 # Final message
 echo ""
