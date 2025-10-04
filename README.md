@@ -1,11 +1,9 @@
-# BD My Termux Tools 🇧🇩
+cat > README.md << 'EOF'
+# 🚀 BD Termux Tools Pro 🇧🇩
 
-**Created by Masum Vai** - Bangladeshi Developer
-
-A powerful collection of Termux tools made with ❤️ in Bangladesh
+**Created by Masum Vai** - Professional Grade Termux Tools
 
 ## 📦 Installation
-
 ```bash
 git clone https://github.com/bdmasumvai/bd-my-termux-.git
 cd bd-my-termux-
