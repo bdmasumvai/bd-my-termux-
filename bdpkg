@@ -1,0 +1,126 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# bdpkg - Bangladeshi Package Manager
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+show_help() {
+    echo -e "${CYAN}"
+    echo "╔══════════════════════════════════╗"
+    echo "║        🇧🇩 BD PKG MANAGER       ║"
+    echo "║      Created by Masum Vai       ║"
+    echo "╚══════════════════════════════════╝"
+    echo -e "${NC}"
+    echo -e "${YELLOW}Usage:${NC}"
+    echo "  bdpkg install <package>    - Install package"
+    echo "  bdpkg remove <package>     - Remove package"
+    echo "  bdpkg search <query>       - Search packages"
+    echo "  bdpkg update               - Update packages"
+    echo "  bdpkg list                 - List installed"
+    echo "  bdpkg clean                - Clean cache"
+    echo "  bdpkg info <package>       - Package info"
+}
+
+install_package() {
+    if [ -z "$1" ]; then
+        echo -e "${RED}❌ Package name required${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}📦 Installing $1...${NC}"
+    if pkg install -y "$1"; then
+        echo -e "${GREEN}✅ Successfully installed: $1${NC}"
+    else
+        echo -e "${RED}❌ Failed to install: $1${NC}"
+    fi
+}
+
+remove_package() {
+    if [ -z "$1" ]; then
+        echo -e "${RED}❌ Package name required${NC}"
+        return 1
+    fi
+    
+    echo -e "${YELLOW}🗑️ Removing $1...${NC}"
+    if pkg uninstall -y "$1"; then
+        echo -e "${GREEN}✅ Successfully removed: $1${NC}"
+    else
+        echo -e "${RED}❌ Failed to remove: $1${NC}"
+    fi
+}
+
+search_packages() {
+    if [ -z "$1" ]; then
+        echo -e "${RED}❌ Search query required${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}🔍 Searching for: $1${NC}"
+    pkg search "$1" | head -20
+}
+
+update_packages() {
+    echo -e "${GREEN}🔄 Updating package lists...${NC}"
+    pkg update
+    
+    echo -e "${GREEN}📥 Upgrading packages...${NC}"
+    pkg upgrade -y
+    
+    echo -e "${GREEN}🧹 Cleaning up...${NC}"
+    pkg autoclean
+}
+
+list_packages() {
+    echo -e "${YELLOW}📋 Installed packages:${NC}"
+    pkg list-installed | head -30
+}
+
+clean_cache() {
+    echo -e "${YELLOW}🧹 Cleaning cache...${NC}"
+    pkg clean
+    pkg autoclean
+    echo -e "${GREEN}✅ Cache cleaned${NC}"
+}
+
+package_info() {
+    if [ -z "$1" ]; then
+        echo -e "${RED}❌ Package name required${NC}"
+        return 1
+    fi
+    
+    echo -e "${YELLOW}📄 Information for: $1${NC}"
+    pkg show "$1"
+}
+
+# Main logic
+case "$1" in
+    install|add|in)
+        install_package "$2"
+        ;;
+    remove|uninstall|rm)
+        remove_package "$2"
+        ;;
+    search|find)
+        search_packages "$2"
+        ;;
+    update|upgrade)
+        update_packages
+        ;;
+    list|ls)
+        list_packages
+        ;;
+    clean)
+        clean_cache
+        ;;
+    info|show)
+        package_info "$2"
+        ;;
+    *)
+        show_help
+        ;;
+esac

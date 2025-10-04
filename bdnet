@@ -1,0 +1,174 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# bdnet - Bangladeshi Network Diagnostics
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+show_help() {
+    echo -e "${CYAN}"
+    echo "╔══════════════════════════════════╗"
+    echo "║       🇧🇩 BD NETWORK TOOLS      ║"
+    echo "║      Created by Masum Vai       ║"
+    echo "╚══════════════════════════════════╝"
+    echo -e "${NC}"
+    echo -e "${YELLOW}Usage:${NC}"
+    echo "  bdnet check           - Full network check"
+    echo "  bdnet speed           - Internet speed test"
+    echo "  bdnet ping <host>     - Ping host"
+    echo "  bdnet dns <domain>    - DNS lookup"
+    echo "  bdnet ports           - Check open ports"
+    echo "  bdnet info            - Network information"
+}
+
+full_check() {
+    echo -e "${CYAN}"
+    echo "🌐 BD Network Diagnostics"
+    echo "========================="
+    echo -e "${NC}"
+
+    # Internet connectivity
+    echo -e "${YELLOW}📡 Internet Connection${NC}"
+    if ping -c 3 8.8.8.8 >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ Internet: Connected${NC}"
+    else
+        echo -e "${RED}❌ Internet: No connection${NC}"
+    fi
+
+    # DNS check
+    echo -e "\n${YELLOW}🔍 DNS Resolution${NC}"
+    if nslookup google.com >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ DNS: Working${NC}"
+    else
+        echo -e "${RED}❌ DNS: Failed${NC}"
+    fi
+
+    # Local IP
+    echo -e "\n${YELLOW}📍 Local Network${NC}"
+    ip route get 1 2>/dev/null | awk '{print $7}' | head -1 | while read ip; do
+        if [ -n "$ip" ] && [ "$ip" != "dev" ]; then
+            echo -e "${GREEN}✅ Local IP: $ip${NC}"
+        else
+            echo -e "${RED}❌ Local IP: Not available${NC}"
+        fi
+    done
+
+    # Public IP
+    echo -e "\n${YELLOW}🌍 Public IP${NC}"
+    public_ip=$(curl -s --connect-timeout 5 https://api.ipify.org)
+    if [ -n "$public_ip" ]; then
+        echo -e "${GREEN}✅ Public IP: $public_ip${NC}"
+        
+        # Location
+        country=$(curl -s --connect-timeout 5 "http://ip-api.com/json/$public_ip?fields=country,isp" | grep -o '"country":"[^"]*' | cut -d'"' -f4)
+        isp=$(curl -s --connect-timeout 5 "http://ip-api.com/json/$public_ip?fields=country,isp" | grep -o '"isp":"[^"]*' | cut -d'"' -f4)
+        
+        if [ "$country" = "Bangladesh" ]; then
+            echo -e "${GREEN}📍 Location: 🇧🇩 Bangladesh${NC}"
+        elif [ -n "$country" ]; then
+            echo -e "${GREEN}📍 Location: $country${NC}"
+        fi
+        
+        if [ -n "$isp" ]; then
+            echo -e "${GREEN}🏢 ISP: $isp${NC}"
+        fi
+    else
+        echo -e "${RED}❌ Public IP: Not available${NC}"
+    fi
+
+    # Network interfaces
+    echo -e "\n${YELLOW}🔌 Network Interfaces${NC}"
+    ifconfig 2>/dev/null | grep -E '^[a-z]|inet ' | while read line; do
+        if [[ $line =~ ^[a-z] ]]; then
+            interface=$(echo $line | cut -d: -f1)
+            echo -e "${BLUE}Interface: $interface${NC}"
+        elif [[ $line =~ inet ]]; then
+            echo -e "  📍 $line"
+        fi
+    done
+
+    echo -e "\n${GREEN}✨ Network diagnostics completed!${NC}"
+}
+
+speed_test() {
+    echo -e "${YELLOW}🚀 Testing internet speed...${NC}"
+    
+    # Download speed test
+    echo -e "${BLUE}📥 Testing download speed...${NC}"
+    start_time=$(date +%s)
+    if curl -o /dev/null -s -w "%{speed_download}\n" https://speedtest-ny.turnkeyinternet.net/100mb.bin > /tmp/speed.txt 2>/dev/null; then
+        end_time=$(date +%s)
+        duration=$((end_time - start_time))
+        speed=$(tail -1 /tmp/speed.txt)
+        speed_mbps=$(echo "scale=2; $speed / 125000" | bc 2>/dev/null || echo "0")
+        echo -e "${GREEN}✅ Download: ${speed_mbps} Mbps (${duration}s)${NC}"
+    else
+        echo -e "${RED}❌ Download test failed${NC}"
+    fi
+
+    rm -f /tmp/speed.txt
+}
+
+ping_host() {
+    if [ -z "$1" ]; then
+        echo -e "${RED}❌ Host required${NC}"
+        echo "Usage: bdnet ping <host>"
+        return 1
+    fi
+    
+    echo -e "${YELLOW}🏓 Pinging $1...${NC}"
+    ping -c 4 "$1"
+}
+
+dns_lookup() {
+    if [ -z "$1" ]; then
+        echo -e "${RED}❌ Domain required${NC}"
+        echo "Usage: bdnet dns <domain>"
+        return 1
+    fi
+    
+    echo -e "${YELLOW}🔍 DNS lookup for $1...${NC}"
+    nslookup "$1"
+}
+
+check_ports() {
+    echo -e "${YELLOW}🔒 Checking common ports...${NC}"
+    
+    ports=("22" "80" "443" "8080")
+    for port in "${ports[@]}"; do
+        if nc -z 127.0.0.1 $port 2>/dev/null; then
+            echo -e "${GREEN}✅ Port $port: Open${NC}"
+        else
+            echo -e "${RED}❌ Port $port: Closed${NC}"
+        fi
+    done
+}
+
+# Main logic
+case "$1" in
+    check|diagnose)
+        full_check
+        ;;
+    speed|speedtest)
+        speed_test
+        ;;
+    ping)
+        ping_host "$2"
+        ;;
+    dns|nslookup)
+        dns_lookup "$2"
+        ;;
+    ports)
+        check_ports
+        ;;
+    info)
+        full_check
+        ;;
+    *)
+        show_help
+        ;;
+esac
